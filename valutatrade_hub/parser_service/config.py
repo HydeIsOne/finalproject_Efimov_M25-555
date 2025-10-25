@@ -49,6 +49,12 @@ class ParserConfig:
 
 
 def load_parser_config() -> ParserConfig:
+    """Load parser configuration from env/.env and project settings.
+
+    Returns a frozen ParserConfig with API URLs/keys, currency lists, file paths
+    and network timeouts. Environment variables override .env; SettingsLoader
+    provides defaults for data/logs directories and base currency.
+    """
     # Load .env once per process (non-overriding), if available
     try:
         if load_dotenv and find_dotenv:

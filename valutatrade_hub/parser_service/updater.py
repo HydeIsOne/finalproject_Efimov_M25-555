@@ -12,6 +12,12 @@ from .storage import append_history, write_snapshot_pairs
 
 
 class RatesUpdater:
+    """Orchestrates fetching from providers, history append, and snapshot write.
+
+    - Aggregates ExchangeRate-API and CoinGecko clients
+    - Appends unique records to exchange_rates.json (unless disabled)
+    - Writes bidirectional pairs into rates.json (strict merge mode configurable)
+    """
     def __init__(self) -> None:
         self.cfg = load_parser_config()
         self.clients = {
@@ -20,6 +26,13 @@ class RatesUpdater:
         }
 
     def run_update(self, source: str | None = None) -> dict[str, Any]:
+        """Run one update cycle.
+
+        Args:
+            source: Optional specific provider ("exchangerate" or "coingecko").
+        Returns:
+            Summary counters: {"fiat": int, "crypto": int, "added": int}.
+        """
         configure_logging()
         logger = logging.getLogger("valutatrade")
         logger.info("Starting rates update...")
@@ -136,4 +149,5 @@ class RatesUpdater:
 
 
 def run_update(source: str | None = None) -> dict[str, Any]:
+    """Convenience function to run an update without instantiating the class."""
     return RatesUpdater().run_update(source=source)

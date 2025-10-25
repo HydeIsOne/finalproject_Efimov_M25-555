@@ -39,7 +39,7 @@ make lint
 - show-portfolio — показать портфель в базовой валюте (по умолчанию USD)
 - buy — купить валюту (списывает USD)
 - sell — продать валюту (зачисляет USD)
-- deposit — пополнить кошелёк (по умолчанию USD)
+- deposit — пополнить кошелек (по умолчанию USD)
 - withdraw — снять средства с кошелька (по умолчанию USD)
 - get-rate — получить курс пары (с локальным кешем)
 - list-currencies — показать список поддерживаемых валют
@@ -94,7 +94,23 @@ poetry run project schedule --interval 600 --strict --no-history
 Нажмите Ctrl+C для остановки. Флаги аналогичны `update-rates`.
 
 ## Иерархия валют
-В `valutatrade_hub/core/currencies.py` реализована иерархия валют с реестром поддерживаемых кодов (USD, EUR, RUB, BTC, ETH). Команда `list-currencies` выводит список поддерживаемых валют.
+В `valutatrade_hub/core/currencies.py` реализована иерархия валют с реестром поддерживаемых кодов (USD, EUR, GBP, RUB, BTC, ETH, SOL). Команда `list-currencies` выводит список поддерживаемых валют.
+
+Пример (фрагмент):
+```
+Поддерживаемые валюты:
++-----+---------------+--------+
+| Код |    Название   |  Тип   |
++-----+---------------+--------+
+| USD |   US Dollar   |  FIAT  |
+| EUR |      Euro     |  FIAT  |
+| GBP | Pound Sterling|  FIAT  |
+| RUB | Russian Ruble |  FIAT  |
+| BTC |    Bitcoin    | CRYPTO |
+| ETH |    Ethereum   | CRYPTO |
+| SOL |     Solana    | CRYPTO |
++-----+---------------+--------+
+```
 
 ## Статус
 Реализованы модели (User/Wallet/Portfolio), use cases с JSON-персистентностью, кастомные исключения, логирование и декораторы, иерархия валют, REPL и расширенный CLI (включая list-currencies). Подключён Parser Service с внешними провайдерами (ExchangeRate-API для фиата и CoinGecko для крипто), поддерживаются история измерений и снимок кэша в `data/`.
@@ -148,6 +164,44 @@ setx EXCHANGERATE_API_KEY "<KEY>"
 ```
 
 Файл `.env` хранится локально, он уже в `.gitignore`. Пример — `.env.example`.
+
+## Структура каталогов (сокращенная версия)
+```
+finalproject_Efimov_M25-555/
+├─ data/
+│  ├─ users.json
+│  ├─ portfolios.json
+│  ├─ rates.json
+│  └─ exchange_rates.json
+├─ valutatrade_hub/
+│  ├─ core/
+│  │  ├─ currencies.py
+│  │  ├─ models.py
+│  │  ├─ usecases.py
+│  │  └─ exceptions.py
+│  ├─ infra/
+│  │  ├─ settings.py
+│  │  └─ database.py
+│  ├─ parser_service/
+│  │  ├─ api_clients.py
+│  │  ├─ config.py
+│  │  ├─ storage.py
+│  │  ├─ updater.py
+│  │  └─ scheduler.py
+│  ├─ cli/
+│  │  └─ interface.py
+│  ├─ logging_config.py
+│  └─ decorators.py
+├─ pyproject.toml
+├─ Makefile
+└─ README.md
+```
+
+## Демо (asciinema)
+Демо-запись (полный сценарий): https://asciinema.org/a/JDVzD1BtRsKZzBzHegNBobqlG
+
+[![asciinema demo](https://asciinema.org/a/JDVzD1BtRsKZzBzHegNBobqlG.svg)](https://asciinema.org/a/JDVzD1BtRsKZzBzHegNBobqlG)
+
 
 ## Сессия
 Данные активной сессии (после login) хранятся во временной папке системы и не попадают в репозиторий. Формат имени файла: `vth_session_<id>.json`, где `<id>` уникален для проекта. В текущей версии выход из сессии выполняется автоматически при следующем входе другим пользователем.

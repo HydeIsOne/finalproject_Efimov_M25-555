@@ -94,12 +94,24 @@ def _now() -> datetime:
 
 
 def list_users() -> list[dict[str, Any]]:
+    """Return all users as JSON-serializable rows.
+
+    Returns:
+        List of user dicts from users.json.
+    """
     _ensure_data_files()
     users = _read_json(USERS_FILE)
     return list(users or [])
 
 
 def find_user_by_username(username: str) -> dict[str, Any] | None:
+    """Find user row by username.
+
+    Args:
+        username: Case-sensitive stored username.
+    Returns:
+        Matching user dict or None.
+    """
     uname = (username or "").strip()
     for u in list_users():
         if u.get("username") == uname:
@@ -108,6 +120,7 @@ def find_user_by_username(username: str) -> dict[str, Any] | None:
 
 
 def find_user_by_id(user_id: int) -> dict[str, Any] | None:
+    """Find user row by numeric id or return None."""
     for u in list_users():
         if int(u.get("user_id", -1)) == int(user_id):
             return u
@@ -122,6 +135,19 @@ def _generate_user_id(users: list[dict[str, Any]]) -> int:
 
 @log_action("REGISTER")
 def register_user(username: str, password: str) -> dict[str, Any]:
+    """Register a new user.
+
+    Validates name and minimal password length, ensures uniqueness, persists
+    the user and creates an empty portfolio.
+
+    Args:
+        username: Desired username.
+        password: Plain password (min 4 chars).
+    Returns:
+        Minimal info: {"user_id": int, "username": str}.
+    Raises:
+        DomainError: On invalid input or if username already taken.
+    """
     uname = (username or "").strip()
     if not uname:
         raise DomainError("Имя пользователя не может быть пустым")
@@ -167,6 +193,16 @@ def register_user(username: str, password: str) -> dict[str, Any]:
 
 @log_action("LOGIN")
 def login_user(username: str, password: str) -> dict[str, Any]:
+    """Authenticate user and persist a local session.
+
+    Args:
+        username: Existing username.
+        password: Plain password.
+    Returns:
+        {"user_id": int, "username": str}
+    Raises:
+        DomainError: If user not found or password mismatch.
+    """
     uname = (username or "").strip()
     if not uname:
         raise DomainError("Имя пользователя не может быть пустым")
@@ -194,6 +230,7 @@ def login_user(username: str, password: str) -> dict[str, Any]:
 
 
 def current_session() -> dict[str, Any] | None:
+    """Return current session dict or None if not logged in."""
     _ensure_data_files()
     data = _read_json(SESSION_FILE) or {}
     if "user_id" in data and "username" in data:
@@ -202,6 +239,7 @@ def current_session() -> dict[str, Any] | None:
 
 
 def require_login() -> dict[str, Any]:
+    """Ensure session exists and return it, else raise DomainError."""
     sess = current_session()
     if not sess:
         raise DomainError("Сначала выполните login")
@@ -209,6 +247,7 @@ def require_login() -> dict[str, Any]:
 
 
 def logout_user() -> None:
+    """Clear current session data (logout)."""
     _ensure_data_files()
     _write_json(SESSION_FILE, {})
 
@@ -217,12 +256,14 @@ def logout_user() -> None:
 
 
 def list_portfolios() -> list[dict[str, Any]]:
+    """Return all portfolios as JSON-serializable rows."""
     _ensure_data_files()
     ports = _read_json(PORTFOLIOS_FILE)
     return list(ports or [])
 
 
 def get_portfolio_row(user_id: int) -> dict[str, Any]:
+    """Get portfolio row for a user or raise DomainError if missing."""
     for p in list_portfolios():
         if int(p.get("user_id", -1)) == int(user_id):
             return p
@@ -230,6 +271,7 @@ def get_portfolio_row(user_id: int) -> dict[str, Any]:
 
 
 def save_portfolio_row(row: dict[str, Any]) -> None:
+    """Upsert a portfolio row by user_id to portfolios.json."""
     rows = list_portfolios()
     uid = int(row.get("user_id", -1))
     replaced = False
@@ -244,6 +286,7 @@ def save_portfolio_row(row: dict[str, Any]) -> None:
 
 
 def add_currency(user_id: int, currency_code: str) -> None:
+    """Ensure wallet exists for currency in user's portfolio (no-op if exists)."""
     code = (currency_code or "").strip().upper()
     if not code:
         raise DomainError("currency_code не может быть пустым")
@@ -257,6 +300,17 @@ def add_currency(user_id: int, currency_code: str) -> None:
 
 
 def adjust_wallet(user_id: int, currency_code: str, delta: float) -> dict[str, Any]:
+    """Adjust wallet balance by delta and persist.
+
+    Args:
+        user_id: Portfolio owner id.
+        currency_code: Wallet currency (e.g., "USD").
+        delta: Positive to deposit, negative to withdraw.
+    Returns:
+        Updated wallet dict: {"balance": float}.
+    Raises:
+        DomainError: On invalid input or insufficient funds.
+    """
     code = (currency_code or "").strip().upper()
     if not code:
         raise DomainError("currency_code не может быть пустым")
@@ -303,7 +357,14 @@ def _save_rates(obj: dict[str, Any]) -> None:
 def get_rate(frm: str, to: str) -> dict[str, Any]:
     """Get rate frm→to using local cache or defaults.
 
-    Returns dict: {"rate": float, "updated_at": iso, "source": str}
+    Args:
+        frm: Source currency code.
+        to: Target currency code.
+    Returns:
+        {"rate": float, "updated_at": ISO-8601 str, "source": str}
+    Raises:
+        CurrencyNotFoundError: If currency code unknown.
+        DomainError: If conversion not possible.
     """
     f = (frm or "").strip().upper()
     t = (to or "").strip().upper()
@@ -376,6 +437,15 @@ def get_rate(frm: str, to: str) -> dict[str, Any]:
 
 
 def show_portfolio(user_id: int, base_currency: str = "USD") -> dict[str, Any]:
+    """Compute portfolio total and wallet details in base currency.
+
+    Args:
+        user_id: Portfolio owner id.
+        base_currency: Target base (default: USD).
+    Returns:
+        {"base": str, "total": float, "wallets": list[dict]} with per-wallet
+        value and last rate timestamp.
+    """
     row = get_portfolio_row(user_id)
     wallets = dict(row.get("wallets", {}))
     base = (base_currency or "USD").strip().upper()
@@ -405,6 +475,22 @@ def show_portfolio(user_id: int, base_currency: str = "USD") -> dict[str, Any]:
 def buy_currency(
     user_id: int, currency_code: str, amount: float, username: str | None = None
 ) -> dict[str, Any]:
+    """Buy amount of currency for USD at current rate.
+
+    Ensures wallets, checks funds, debits USD and credits target currency.
+
+    Args:
+        user_id: Buyer id.
+        currency_code: Currency to buy (e.g., "EUR").
+        amount: Quantity to buy (> 0).
+        username: Optional for logging context.
+    Returns:
+        {"currency", "amount", "rate_usd", "cost_usd", "new_balance"}.
+    Raises:
+        CurrencyNotFoundError: Unknown currency.
+        InsufficientFundsError: Not enough USD balance.
+        DomainError: Invalid amount or state errors.
+    """
     code = (currency_code or "").strip().upper()
     if not code:
         raise CurrencyNotFoundError(code)
@@ -453,6 +539,22 @@ def buy_currency(
 def sell_currency(
     user_id: int, currency_code: str, amount: float, username: str | None = None
 ) -> dict[str, Any]:
+    """Sell amount of currency for USD at current rate.
+
+    Debits the currency wallet and credits USD wallet.
+
+    Args:
+        user_id: Seller id.
+        currency_code: Currency to sell.
+        amount: Quantity to sell (> 0).
+        username: Optional for logging context.
+    Returns:
+        {"currency", "amount", "rate_usd", "proceeds_usd", "new_balance"}.
+    Raises:
+        CurrencyNotFoundError: Unknown currency.
+        InsufficientFundsError: Not enough currency balance.
+        DomainError: Invalid amount or state errors.
+    """
     code = (currency_code or "").strip().upper()
     if not code:
         raise CurrencyNotFoundError(code)

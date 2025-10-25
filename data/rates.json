@@ -31,35 +31,35 @@
       "source": "ExchangeRate-API"
     },
     "BTC_USD": {
-      "rate": 111626.0,
-      "updated_at": "2025-10-25T19:24:04Z",
+      "rate": 111600.0,
+      "updated_at": "2025-10-25T20:01:48Z",
       "source": "CoinGecko"
     },
     "USD_BTC": {
-      "rate": 8.958486374142224e-06,
-      "updated_at": "2025-10-25T19:24:04Z",
+      "rate": 8.960573476702509e-06,
+      "updated_at": "2025-10-25T20:01:48Z",
       "source": "CoinGecko"
     },
     "ETH_USD": {
-      "rate": 3953.54,
-      "updated_at": "2025-10-25T19:24:04Z",
+      "rate": 3956.27,
+      "updated_at": "2025-10-25T20:01:48Z",
       "source": "CoinGecko"
     },
     "USD_ETH": {
-      "rate": 0.0002529378733995356,
-      "updated_at": "2025-10-25T19:24:04Z",
+      "rate": 0.0002527633351616548,
+      "updated_at": "2025-10-25T20:01:48Z",
       "source": "CoinGecko"
     },
     "SOL_USD": {
-      "rate": 194.24,
-      "updated_at": "2025-10-25T19:24:04Z",
+      "rate": 194.53,
+      "updated_at": "2025-10-25T20:01:48Z",
       "source": "CoinGecko"
     },
     "USD_SOL": {
-      "rate": 0.00514827018121911,
-      "updated_at": "2025-10-25T19:24:04Z",
+      "rate": 0.005140595280933532,
+      "updated_at": "2025-10-25T20:01:48Z",
       "source": "CoinGecko"
     }
   },
-  "last_refresh": "2025-10-25T19:24:04Z"
+  "last_refresh": "2025-10-25T20:01:48Z"
 }

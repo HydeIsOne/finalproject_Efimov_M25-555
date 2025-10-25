@@ -86,6 +86,12 @@ def clear_history() -> int:
 
 
 def read_snapshot() -> dict[str, Any]:
+    """Read snapshot rates.json structure as a dict.
+
+    Returns:
+        {"pairs": {PAIR: {"rate", "updated_at", "source"}}, "last_refresh": str|None}
+        Fallbacks to an empty structure on errors.
+    """
     ensure_storage()
     path = rates_snapshot_path()
     try:

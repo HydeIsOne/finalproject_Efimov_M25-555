@@ -68,13 +68,16 @@ class CryptoCurrency(Currency):
 _REGISTRY: dict[str, Currency] = {
     "USD": FiatCurrency("US Dollar", "USD", "United States"),
     "EUR": FiatCurrency("Euro", "EUR", "Eurozone"),
+    "GBP": FiatCurrency("Pound Sterling", "GBP", "United Kingdom"),
     "RUB": FiatCurrency("Russian Ruble", "RUB", "Russia"),
     "BTC": CryptoCurrency("Bitcoin", "BTC", "SHA-256", 1.12e12),
     "ETH": CryptoCurrency("Ethereum", "ETH", "Ethash", 4.5e11),
+    "SOL": CryptoCurrency("Solana", "SOL", "PoH+PoS", 9.0e10),
 }
 
 
 def get_currency(code: str) -> Currency:
+    """Return currency from registry by code or raise CurrencyNotFoundError."""
     c = (code or "").strip().upper()
     cur = _REGISTRY.get(c)
     if not cur:

@@ -79,13 +79,10 @@
     "user_id": 8,
     "wallets": {
       "USD": {
-        "balance": 541.52395
+        "balance": 991.3712
       },
       "EUR": {
-        "balance": 150.0
-      },
-      "BTC": {
-        "balance": 0.005
+        "balance": 8.0
       }
     }
   }

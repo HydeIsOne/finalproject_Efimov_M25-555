@@ -8,6 +8,11 @@ from .infra.settings import SettingsLoader
 
 
 def configure_logging() -> None:
+    """Configure project-wide logging with rotating file and console output.
+
+    Uses SettingsLoader for file path, level, and rotation settings. Idempotent:
+    subsequent calls won't duplicate handlers.
+    """
     settings = SettingsLoader()
     log_file = Path(settings.get("log_file"))
     level_name = str(settings.get("log_level", "INFO")).upper()

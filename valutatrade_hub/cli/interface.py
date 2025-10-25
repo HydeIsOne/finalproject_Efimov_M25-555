@@ -29,12 +29,19 @@ from ..parser_service.scheduler import (
 
 
 def _print_error(msg: str) -> None:
+    """Print a user-facing error message (no stack traces)."""
     print(msg)
 
 
 
 
 def _print_portfolio(username: str, data: dict[str, Any]) -> None:
+    """Render portfolio summary table.
+
+    Args:
+        username: Display name for header.
+        data: Result of usecases.show_portfolio.
+    """
     base = data["base"]
     print(f"Портфель пользователя '{username}' (база: {base}):")
     table = PrettyTable()
@@ -88,6 +95,7 @@ def _print_portfolio(username: str, data: dict[str, Any]) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Construct the top-level argparse parser with all subcommands."""
     parser = argparse.ArgumentParser(prog="valutatrade")
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -219,6 +227,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _run_once(argv: list[str]) -> int:
+    """Execute a single CLI command and return process exit code."""
     parser = build_parser()
     ns = parser.parse_args(argv)
     # Best-effort daily auto-update on first command
@@ -559,6 +568,7 @@ def _run_once(argv: list[str]) -> int:
 
 
 def _print_repl_help() -> None:
+    """Print short help for REPL usage with examples."""
     print("Доступные команды:")
     print("  register --username <name> --password <pwd>")
     print("  login --username <name> --password <pwd>")
@@ -591,6 +601,7 @@ def _print_repl_help() -> None:
 
 
 def _repl_loop() -> int:
+    """Run the interactive REPL loop until user exits."""
     # Best-effort daily auto-update at REPL start
     _maybe_auto_update(None)
     print(
@@ -633,6 +644,13 @@ def _repl_loop() -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entrypoint used by Poetry script and main.py.
+
+    Args:
+        argv: Optional explicit argv (without program name). If None, uses sys.argv[1:].
+    Returns:
+        Exit code integer (0 success, non-zero on error).
+    """
     # Ensure logging is configured once per process
     configure_logging()
     args = sys.argv[1:] if argv is None else argv
