@@ -1,1 +1,58 @@
-[]
+[
+  {
+    "user_id": 1,
+    "username": "alexey.smirnov",
+    "hashed_password": "ee7186576ec1c919b9fcffc8974d81d160dce4f76b33c78baa449ff654f705fd",
+    "salt": "27636a16",
+    "registration_date": "2025-10-25T13:44:20+00:00"
+  },
+  {
+    "user_id": 2,
+    "username": "maria.ivanova",
+    "hashed_password": "6005294c88e59eb427ba1d235e849662237d3d43d14761f08a7074f724f5f1f8",
+    "salt": "436d1b80",
+    "registration_date": "2025-10-25T13:44:37+00:00"
+  },
+  {
+    "user_id": 3,
+    "username": "sergey.petrov",
+    "hashed_password": "3eee193b14acee9f49ea243cc7e20bfac9665f139d09337800ffc4ac84035d46",
+    "salt": "05cc185a",
+    "registration_date": "2025-10-25T13:45:25+00:00"
+  },
+  {
+    "user_id": 4,
+    "username": "olga.sokolova",
+    "hashed_password": "8902b9382260b65ee1ff4384ab642f3c7e96196ee6d078ec4c790ad016dd89d0",
+    "salt": "f05a0f8c",
+    "registration_date": "2025-10-25T13:49:27+00:00"
+  },
+  {
+    "user_id": 5,
+    "username": "pavel.kuznetsov",
+    "hashed_password": "2a9949d6edaeb0ee3568f43dc1285a4183c8761361a1e895c8d91fb834764f91",
+    "salt": "2ea0984d",
+    "registration_date": "2025-10-25T13:51:42+00:00"
+  },
+  {
+    "user_id": 6,
+    "username": "ivan.petrov",
+    "hashed_password": "e7f683478935ed01ba41bbbabfdcc9aa61c6fa26911027d07056ad6d40f2bf1d",
+    "salt": "d0d14c5d",
+    "registration_date": "2025-10-25T13:56:45+00:00"
+  },
+  {
+    "user_id": 7,
+    "username": "ft_e9cd19",
+    "hashed_password": "e9e39e9371a0e7981ce5b1d6fe89bdc373f3ea6d0e3e1a3a505789227b5f3ed7",
+    "salt": "783d41c6",
+    "registration_date": "2025-10-25T16:20:07+00:00"
+  },
+  {
+    "user_id": 8,
+    "username": "alice",
+    "hashed_password": "3441964dce98ceb43be12e805ce476a060ebec95a6c155096e4d8f2c94d76f2e",
+    "salt": "23121990",
+    "registration_date": "2025-10-25T20:00:42+00:00"
+  }
+]

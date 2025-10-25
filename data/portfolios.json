@@ -1,1 +1,89 @@
-{}
+[
+  {
+    "user_id": 1,
+    "wallets": {
+      "USD": {
+        "balance": 496.7642
+      },
+      "EUR": {
+        "balance": 3.0
+      }
+    }
+  },
+  {
+    "user_id": 2,
+    "wallets": {
+      "USD": {
+        "balance": 496.7642
+      },
+      "EUR": {
+        "balance": 3.0
+      }
+    }
+  },
+  {
+    "user_id": 3,
+    "wallets": {}
+  },
+  {
+    "user_id": 4,
+    "wallets": {
+      "USD": {
+        "balance": 993.5284
+      },
+      "EUR": {
+        "balance": 6.0
+      }
+    }
+  },
+  {
+    "user_id": 5,
+    "wallets": {
+      "EUR": {
+        "balance": 0.0
+      },
+      "USD": {
+        "balance": 0.0
+      }
+    }
+  },
+  {
+    "user_id": 6,
+    "wallets": {
+      "USD": {
+        "balance": 987.68278984
+      },
+      "EUR": {
+        "balance": 52.0
+      },
+      "BTC": {
+        "balance": 0.01
+      },
+      "RUB": {
+        "balance": 1000.001
+      }
+    }
+  },
+  {
+    "user_id": 7,
+    "wallets": {
+      "USD": {
+        "balance": 993.5284
+      },
+      "EUR": {
+        "balance": 6.0
+      }
+    }
+  },
+  {
+    "user_id": 8,
+    "wallets": {
+      "USD": {
+        "balance": 991.3712
+      },
+      "EUR": {
+        "balance": 8.0
+      }
+    }
+  }
+]

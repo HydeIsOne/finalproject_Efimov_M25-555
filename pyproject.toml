@@ -11,6 +11,9 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.13"
 prettytable = "^3.16.0"
+tomli = { version = "^2.0.1", python = "<3.11" }
+requests = "^2.32.3"
+python-dotenv = "^1.0.1"
 
 [tool.poetry.scripts]
 project = "valutatrade_hub.cli.interface:main"
