@@ -22,7 +22,13 @@ def log_action(
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            ts = datetime.now(timezone.utc).isoformat()
+            # Uniform ISO timestamp without microseconds, UTC 'Z' suffix
+            ts = (
+                datetime.now(timezone.utc)
+                .replace(microsecond=0)
+                .isoformat()
+                .replace("+00:00", "Z")
+            )
             try:
                 result = func(*args, **kwargs)
                 # Best-effort extraction of common fields

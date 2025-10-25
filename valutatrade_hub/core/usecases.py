@@ -322,7 +322,11 @@ def get_rate(frm: str, to: str) -> dict[str, Any]:
 
     cache = _load_rates()
     key = _pair_key(f, t)
-    entry = cache.get(key)
+    pairs_section = cache.get("pairs") if isinstance(cache, dict) else None
+    if isinstance(pairs_section, dict):
+        entry = pairs_section.get(key)
+    else:
+        entry = cache.get(key)
 
     def _is_fresh(ts: str | None) -> bool:
         if not ts:
@@ -337,7 +341,7 @@ def get_rate(frm: str, to: str) -> dict[str, Any]:
         return {
             "rate": float(entry["rate"]),
             "updated_at": entry["updated_at"],
-            "source": cache.get("source", "cache"),
+            "source": entry.get("source", cache.get("source", "cache")),
         }
 
     # Try refresh via local stub (Parser Service placeholder)
@@ -355,11 +359,17 @@ def get_rate(frm: str, to: str) -> dict[str, Any]:
         raise DomainError(f"Курс {f}→{t} недоступен. Повторите попытку позже.")
 
     ts = _now().replace(microsecond=0).isoformat()
-    cache[key] = {"rate": rate, "updated_at": ts}
-    cache["source"] = cache.get("source", "LocalStub")
-    cache["last_refresh"] = ts
+    # Write back honoring new snapshot structure if present
+    if isinstance(pairs_section, dict):
+        pairs_section[key] = {"rate": rate, "updated_at": ts, "source": "LocalStub"}
+        cache["pairs"] = pairs_section
+        cache["last_refresh"] = ts
+    else:
+        cache[key] = {"rate": rate, "updated_at": ts}
+        cache["source"] = cache.get("source", "LocalStub")
+        cache["last_refresh"] = ts
     _save_rates(cache)
-    return {"rate": rate, "updated_at": ts, "source": cache["source"]}
+    return {"rate": rate, "updated_at": ts, "source": "LocalStub"}
 
 
 # ------------------ Operations ------------------

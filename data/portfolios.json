@@ -74,5 +74,19 @@
         "balance": 6.0
       }
     }
+  },
+  {
+    "user_id": 8,
+    "wallets": {
+      "USD": {
+        "balance": 541.52395
+      },
+      "EUR": {
+        "balance": 150.0
+      },
+      "BTC": {
+        "balance": 0.005
+      }
+    }
   }
 ]

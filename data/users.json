@@ -47,5 +47,12 @@
     "hashed_password": "e9e39e9371a0e7981ce5b1d6fe89bdc373f3ea6d0e3e1a3a505789227b5f3ed7",
     "salt": "783d41c6",
     "registration_date": "2025-10-25T16:20:07+00:00"
+  },
+  {
+    "user_id": 8,
+    "username": "alice",
+    "hashed_password": "d327d33d8b38ca07229d1c6a0f740c992a1fa8f0c00fb65328cd88631c1b2119",
+    "salt": "6521f832",
+    "registration_date": "2025-10-25T18:19:33+00:00"
   }
 ]
