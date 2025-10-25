@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "finalproject-efimov-m25-555"
+version = "0.1.0"
+description = "Учебная платформа (CLI) для отслеживания и симуляции торговли валютами."
+authors = ["hydeisone <hydeisone@gmail.com>"]
+readme = "README.md"
+packages = [
+	{ include = "valutatrade_hub" },
+]
+
+[tool.poetry.dependencies]
+python = ">=3.13"
+prettytable = "^3.16.0"
+
+[tool.poetry.scripts]
+project = "valutatrade_hub.cli.interface:main"
+database = "valutatrade_hub.cli.database:main"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+exclude = ["venv", ".venv", "dist", "__pycache__"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = []
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.13.0"
