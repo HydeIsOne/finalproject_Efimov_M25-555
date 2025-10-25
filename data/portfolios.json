@@ -51,13 +51,27 @@
     "user_id": 6,
     "wallets": {
       "USD": {
-        "balance": 998.9214
+        "balance": 987.68278984
       },
       "EUR": {
-        "balance": 51.0
+        "balance": 52.0
       },
       "BTC": {
         "balance": 0.01
+      },
+      "RUB": {
+        "balance": 1000.001
+      }
+    }
+  },
+  {
+    "user_id": 7,
+    "wallets": {
+      "USD": {
+        "balance": 993.5284
+      },
+      "EUR": {
+        "balance": 6.0
       }
     }
   }

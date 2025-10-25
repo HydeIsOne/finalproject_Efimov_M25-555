@@ -18,10 +18,16 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from ..decorators import log_action
+from ..infra.database import DatabaseManager
+from ..infra.settings import SettingsLoader
+from . import currencies as cur
+from .exceptions import CurrencyNotFoundError, InsufficientFundsError
 from .models import DomainError, User
 
+_SETTINGS = SettingsLoader()
 # Paths
-DATA_DIR = Path("data")
+DATA_DIR = Path(_SETTINGS.get("data_dir", "data"))
 USERS_FILE = DATA_DIR / "users.json"
 PORTFOLIOS_FILE = DATA_DIR / "portfolios.json"
 RATES_FILE = DATA_DIR / "rates.json"
@@ -31,8 +37,8 @@ _PROJECT_ID = hashlib.sha1(
 ).hexdigest()[:8]
 SESSION_FILE = Path(tempfile.gettempdir()) / f"vth_session_{_PROJECT_ID}.json"
 
-# Rates config
-RATES_MAX_AGE_SECONDS = 300  # 5 minutes
+# Rates config from settings
+RATES_MAX_AGE_SECONDS = int(_SETTINGS.get("rates_ttl_seconds", 300))
 
 
 def _ensure_data_files() -> None:
@@ -46,22 +52,37 @@ def _ensure_data_files() -> None:
 
 
 def _read_json(path: Path) -> Any:
+    # Delegate to DatabaseManager for centralized access
+    db = DatabaseManager()
+    if path == USERS_FILE:
+        return db.read_users()
+    if path == PORTFOLIOS_FILE:
+        return db.read_portfolios()
+    if path == RATES_FILE:
+        return db.read_rates()
+    # Fallback
     try:
         text = path.read_text(encoding="utf-8")
         return json.loads(text) if text else None
-    except FileNotFoundError:
-        return None
-    except json.JSONDecodeError as exc:
-        raise DomainError(f"Corrupted JSON at {path}: {exc}") from exc
+    except Exception as exc:  # noqa: BLE001
+        raise DomainError(f"Failed to read JSON at {path}: {exc}") from exc
 
 
 def _write_json(path: Path, data: Any) -> None:
+    db = DatabaseManager()
     try:
-        path.write_text(
-            json.dumps(data, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
-    except OSError as exc:
+        if path == USERS_FILE:
+            db.write_users(list(data or []))
+        elif path == PORTFOLIOS_FILE:
+            db.write_portfolios(list(data or []))
+        elif path == RATES_FILE:
+            db.write_rates(dict(data or {}))
+        else:
+            path.write_text(
+                json.dumps(data, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+    except Exception as exc:  # noqa: BLE001
         raise DomainError(f"Failed to write JSON at {path}: {exc}") from exc
 
 
@@ -86,12 +107,20 @@ def find_user_by_username(username: str) -> dict[str, Any] | None:
     return None
 
 
+def find_user_by_id(user_id: int) -> dict[str, Any] | None:
+    for u in list_users():
+        if int(u.get("user_id", -1)) == int(user_id):
+            return u
+    return None
+
+
 def _generate_user_id(users: list[dict[str, Any]]) -> int:
     if not users:
         return 1
     return max(int(u.get("user_id", 0)) for u in users) + 1
 
 
+@log_action("REGISTER")
 def register_user(username: str, password: str) -> dict[str, Any]:
     uname = (username or "").strip()
     if not uname:
@@ -136,6 +165,7 @@ def register_user(username: str, password: str) -> dict[str, Any]:
     return {"user_id": user_id, "username": uname}
 
 
+@log_action("LOGIN")
 def login_user(username: str, password: str) -> dict[str, Any]:
     uname = (username or "").strip()
     if not uname:
@@ -278,9 +308,17 @@ def get_rate(frm: str, to: str) -> dict[str, Any]:
     f = (frm or "").strip().upper()
     t = (to or "").strip().upper()
     if not f or not t:
-        raise DomainError("Коды валют не должны быть пустыми")
+        raise CurrencyNotFoundError(f or t)
+    # Validate via currencies registry
+    cur.get_currency(f)
+    cur.get_currency(t)
     if f == t:
-        return {"rate": 1.0, "updated_at": _now().isoformat(), "source": "local"}
+        # Normalize timestamp to second precision for consistent display
+        return {
+            "rate": 1.0,
+            "updated_at": _now().replace(microsecond=0).isoformat(),
+            "source": "local",
+        }
 
     cache = _load_rates()
     key = _pair_key(f, t)
@@ -302,7 +340,9 @@ def get_rate(frm: str, to: str) -> dict[str, Any]:
             "source": cache.get("source", "cache"),
         }
 
-    # Fallback to defaults (via USD bridge if needed)
+    # Try refresh via local stub (Parser Service placeholder)
+    # If refresh fails in future (real API), raise ApiRequestError
+    # For now, use local defaults as a "successful" refresh
     def_rates = _default_rates_to_usd()
     if f == "USD" and t in def_rates:
         rate = 1.0 / def_rates[t]
@@ -351,10 +391,15 @@ def show_portfolio(user_id: int, base_currency: str = "USD") -> dict[str, Any]:
     return {"base": base, "total": round(total_base, 8), "wallets": details}
 
 
-def buy_currency(user_id: int, currency_code: str, amount: float) -> dict[str, Any]:
+@log_action("BUY")
+def buy_currency(
+    user_id: int, currency_code: str, amount: float, username: str | None = None
+) -> dict[str, Any]:
     code = (currency_code or "").strip().upper()
     if not code:
-        raise DomainError("currency_code не может быть пустым")
+        raise CurrencyNotFoundError(code)
+    # Validate currency code exists
+    cur.get_currency(code)
     try:
         amt = float(amount)
     except (TypeError, ValueError) as exc:
@@ -371,7 +416,15 @@ def buy_currency(user_id: int, currency_code: str, amount: float) -> dict[str, A
 
     # Deduct from USD wallet
     add_currency(user_id, "USD")
-    # Will raise DomainError on insufficient funds
+    # Will raise InsufficientFundsError on insufficient funds
+    row = get_portfolio_row(user_id)
+    bal_usd = float(
+        dict(row.get("wallets", {}))
+        .get("USD", {"balance": 0.0})
+        .get("balance", 0.0)
+    )
+    if bal_usd < cost_usd:
+        raise InsufficientFundsError(bal_usd, cost_usd, "USD")
     adjust_wallet(user_id, "USD", -cost_usd)
 
     # Credit target wallet
@@ -386,10 +439,15 @@ def buy_currency(user_id: int, currency_code: str, amount: float) -> dict[str, A
     }
 
 
-def sell_currency(user_id: int, currency_code: str, amount: float) -> dict[str, Any]:
+@log_action("SELL")
+def sell_currency(
+    user_id: int, currency_code: str, amount: float, username: str | None = None
+) -> dict[str, Any]:
     code = (currency_code or "").strip().upper()
     if not code:
-        raise DomainError("currency_code не может быть пустым")
+        raise CurrencyNotFoundError(code)
+    # Validate currency code exists
+    cur.get_currency(code)
     try:
         amt = float(amount)
     except (TypeError, ValueError) as exc:
@@ -403,12 +461,7 @@ def sell_currency(user_id: int, currency_code: str, amount: float) -> dict[str, 
         dict(row.get("wallets", {})).get(code, {"balance": 0.0}).get("balance", 0.0)
     )
     if bal < amt:
-        raise DomainError(
-            (
-                "Недостаточно средств: доступно "
-                f"{bal:.4f} {code}, требуется {amt:.4f} {code}"
-            )
-        )
+        raise InsufficientFundsError(bal, amt, code)
 
     # Price in USD
     rate_info = get_rate(code, "USD")

@@ -9,11 +9,19 @@ from __future__ import annotations
 import argparse
 import shlex
 import sys
+from datetime import datetime
 from typing import Any
 
 from prettytable import PrettyTable
 
+from ..core import currencies as cur
 from ..core import usecases as uc
+from ..core.exceptions import (
+    ApiRequestError,
+    CurrencyNotFoundError,
+    InsufficientFundsError,
+)
+from ..logging_config import configure_logging
 
 
 def _print_error(msg: str) -> None:
@@ -31,17 +39,46 @@ def _print_portfolio(username: str, data: dict[str, Any]) -> None:
         "Курс",
         "Обновлено",
     ]
+    # Align numeric columns to the right for better readability
+    table.align["Валюта"] = "l"
+    table.align["Баланс"] = "r"
+    table.align[f"Стоимость ({base})"] = "r"
+    table.align["Курс"] = "r"
+    table.align["Обновлено"] = "l"
     for w in data["wallets"]:
         code = w.get("currency", "")
         bal = float(w.get("balance", 0.0))
         value = float(w.get("value", 0.0))
         rate = w.get("rate")
         updated = w.get("updated_at", "")
+        # Normalize timestamp to seconds for consistent display
+        updated_s = updated
+        if isinstance(updated, str) and updated:
+            try:
+                dt = datetime.fromisoformat(updated)
+                updated_s = dt.replace(microsecond=0).isoformat()
+            except Exception:  # noqa: BLE001
+                updated_s = updated
         rate_s = f"{float(rate):.6f}" if isinstance(rate, (int, float)) else ""
-        table.add_row([f"{code}", f"{bal:.4f}", f"{value:.2f}", rate_s, updated])
+        # Use thousands separators for balances and values
+        table.add_row([
+            f"{code}",
+            f"{bal:,.4f}",
+            f"{value:,.2f}",
+            rate_s,
+            updated_s,
+        ])
+    # Summary row
+    table.add_row([
+        "ИТОГО",
+        "",
+        f"{data['total']:,.2f}",
+        "",
+        "",
+    ])
     print(table)
     print("-" * 33)
-    print(f"ИТОГО: {data['total']:.2f} {base}")
+    print(f"ИТОГО: {data['total']:,.2f} {base}")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -77,6 +114,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--from", dest="frm", required=True)
     p.add_argument("--to", dest="to", required=True)
 
+    # list-currencies
+    sub.add_parser("list-currencies", help="Список поддерживаемых валют")
+
     return parser
 
 
@@ -108,7 +148,9 @@ def _run_once(argv: list[str]) -> int:
 
         if ns.command == "buy":
             sess = uc.require_login()
-            res = uc.buy_currency(sess["user_id"], ns.currency, ns.amount)
+            res = uc.buy_currency(
+                sess["user_id"], ns.currency, ns.amount, username=sess["username"]
+            )
             print(
                 (
                     "Покупка выполнена: "
@@ -125,7 +167,9 @@ def _run_once(argv: list[str]) -> int:
 
         if ns.command == "sell":
             sess = uc.require_login()
-            res = uc.sell_currency(sess["user_id"], ns.currency, ns.amount)
+            res = uc.sell_currency(
+                sess["user_id"], ns.currency, ns.amount, username=sess["username"]
+            )
             print(
                 (
                     "Продажа выполнена: "
@@ -152,8 +196,29 @@ def _run_once(argv: list[str]) -> int:
             )
             return 0
 
+        if ns.command == "list-currencies":
+            table = PrettyTable()
+            table.field_names = ["Код", "Название", "Тип"]
+            for c in cur.list_supported():
+                kind = "FIAT" if c.__class__.__name__.startswith("Fiat") else "CRYPTO"
+                table.add_row([c.code, getattr(c, "name", c.code), kind])
+            print("Поддерживаемые валюты:")
+            print(table)
+            return 0
+
         parser.print_help()
         return 2
+    except InsufficientFundsError as exc:
+        _print_error(str(exc))
+        return 1
+    except CurrencyNotFoundError as exc:
+        _print_error(str(exc))
+        _print_error("Подсказка: используйте get-rate или проверьте код валюты")
+        return 1
+    except ApiRequestError as exc:
+        _print_error(str(exc))
+        _print_error("Повторите попытку позже или проверьте сеть")
+        return 1
     except uc.DomainError as exc:  # type: ignore[attr-defined]
         _print_error(str(exc))
         return 1
@@ -165,7 +230,7 @@ def _run_once(argv: list[str]) -> int:
 def _print_repl_help() -> None:
     print(
         "Доступные команды: register, login, show-portfolio, buy, sell, get-rate, "
-        "help, exit"
+        "list-currencies, help, exit"
     )
     print("Примеры:")
     print("  login --username ivan.petrov --password test1234")
@@ -194,7 +259,13 @@ def _repl_loop() -> int:
         except ValueError as exc:
             _print_error(f"Парсинг команды: {exc}")
             continue
-        code = _run_once(args)
+        try:
+            code = _run_once(args)
+        except SystemExit:
+            # Ошибки argparse (некорректные аргументы) не должны завершать REPL
+            # Сообщение об ошибке уже напечатано argparse; просто продолжаем.
+            # Дополнительно можно вывести код: str(exc)
+            continue
         # Не выходим из REPL при ошибке — продолжаем
         if code == 0:
             continue
@@ -203,6 +274,8 @@ def _repl_loop() -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Ensure logging is configured once per process
+    configure_logging()
     args = sys.argv[1:] if argv is None else argv
     if not args:
         return _repl_loop()
