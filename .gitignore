@@ -27,3 +27,9 @@ htmlcov/
 Thumbs.db
 .python-version
 .ipynb_checkpoints/
+
+# Local helper scripts (not versioned)
+scripts/
+
+# Local functional tests (ignored)
+tests/functional/
