@@ -140,6 +140,7 @@ class Wallet:
         if amount <= 0:
             raise DomainError("amount must be positive")
         if float(amount) > self._balance:
+            # Defer to use-cases for rich error, keep generic here
             raise DomainError("insufficient funds")
         self._balance -= float(amount)
 

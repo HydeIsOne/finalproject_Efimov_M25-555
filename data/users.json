@@ -40,5 +40,12 @@
     "hashed_password": "e7f683478935ed01ba41bbbabfdcc9aa61c6fa26911027d07056ad6d40f2bf1d",
     "salt": "d0d14c5d",
     "registration_date": "2025-10-25T13:56:45+00:00"
+  },
+  {
+    "user_id": 7,
+    "username": "ft_e9cd19",
+    "hashed_password": "e9e39e9371a0e7981ce5b1d6fe89bdc373f3ea6d0e3e1a3a505789227b5f3ed7",
+    "salt": "783d41c6",
+    "registration_date": "2025-10-25T16:20:07+00:00"
   }
 ]
